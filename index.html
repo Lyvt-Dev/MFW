@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MFW - Menschen. Frieden. Welt.</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/pics/logo.png">
+    
+    <!-- Premium Fonts -->
+    <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,500,700,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mfw: {
+                            bg: '#0a0510',
+                            card: '#130921',
+                            border: '#2a1744',
+                            lavender: '#c29cf0',
+                            purple: '#9b6dff',
+                            magenta: '#e855f7',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Geist', 'sans-serif'],
+                        display: ['Cabinet Grotesk', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+            background-color: #0a0510;
+            color: #f1f5f9;
+        }
+        
+        h1, h2, h3, h4, h5, h6, .font-display {
+            font-family: 'Cabinet Grotesk', sans-serif;
+        }
+
+        .hero-img-bg {
+            background-image: url('https://picsum.photos/seed/purple-sky-night/1920/1080');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .glow-magenta { box-shadow: 0 0 60px -15px rgba(232, 85, 247, 0.25); }
+        .glow-purple { box-shadow: 0 0 60px -15px rgba(155, 109, 255, 0.25); }
+
+        .hero-elem { transform: translateY(40px) scale(0.95); opacity: 0; will-change: transform, opacity; }
+        .reveal-elem { opacity: 0; transform: translateY(50px); will-change: transform, opacity; }
+        
+        .glass-panel {
+            background: rgba(19, 9, 33, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(194, 156, 240, 0.15);
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0510; }
+        ::-webkit-scrollbar-thumb { background: #2a1744; border-radius: 4px; }
+
+        /* Modal classes */
+        .modal-active, .locked { overflow: hidden; }
+        .modal-overlay { display: none; opacity: 0; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden w-full max-w-full">
+
+    <!-- Password Protection Overlay -->
+    <div id="password-screen" class="fixed inset-0 z-[9999] bg-mfw-bg flex flex-col items-center justify-center p-5 transition-opacity duration-700">
+        <div class="absolute inset-0 bg-gradient-to-br from-mfw-purple/10 to-mfw-bg"></div>
+        <div class="relative z-10 glass-panel p-8 md:p-12 rounded-3xl w-full max-w-md text-center border border-white/10 shadow-[0_0_80px_-15px_rgba(194,156,240,0.2)]">
+            <img src="assets/pics/logo.png" alt="MFW Logo" class="h-20 w-20 mx-auto mb-6 object-contain" onerror="this.style.display='none'">
+            <h2 class="font-display font-bold text-3xl text-white mb-2">Privater Zugang</h2>
+            <p class="text-zinc-400 font-medium mb-8">Bitte gib das Passwort ein, um die Seite zu betreten.</p>
+            
+            <form id="password-form" class="flex flex-col gap-4">
+                <input type="password" id="password-input" class="w-full bg-black/50 border border-white/20 rounded-xl px-5 py-4 text-white text-center text-xl focus:outline-none focus:border-mfw-magenta transition-colors" placeholder="Passwort" autocomplete="off">
+                <button type="submit" class="w-full bg-white text-black font-display font-bold text-lg py-4 rounded-xl hover:scale-105 active:scale-95 transition-all">Betreten</button>
+            </form>
+            <p id="password-error" class="text-red-400 text-sm mt-4 opacity-0 transition-opacity font-medium">Falsches Passwort.</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 transition-all duration-300 py-4 md:py-6 px-5 md:px-10 flex justify-between items-center text-white" id="navbar">
+        <div class="flex items-center">
+            <a href="#" class="hover:scale-105 transition-transform">
+                <!-- Just the logo, exactly as requested -->
+                <img src="assets/pics/logo.png" alt="MFW Logo" class="h-16 w-16 md:h-20 md:w-20 object-contain bg-transparent" onerror="this.src='https://picsum.photos/seed/mfw-logo/100/100'">
+            </a>
+        </div>
+        <div class="hidden md:flex gap-10 text-sm font-medium tracking-wide">
+            <a href="#wahlprogramm" class="hover:text-mfw-magenta transition-colors">Wahlprogramm</a>
+            <a href="#spenden" class="hover:text-mfw-magenta transition-colors">Spenden</a>
+        </div>
+        <div class="md:hidden flex items-center">
+            <a href="#spenden" class="text-xs font-display font-black tracking-wide bg-gradient-to-r from-mfw-purple to-mfw-magenta text-white px-5 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_-5px_rgba(232,85,247,0.5)]">Spenden</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="relative min-h-[100dvh] flex flex-col justify-end pb-16 md:pb-32 px-5 md:px-16 hero-img-bg overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-t from-mfw-bg via-mfw-bg/80 to-mfw-bg/30"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-mfw-magenta/5 to-mfw-purple/10 mix-blend-overlay"></div>
+            
+            <div class="relative z-10 w-full max-w-6xl mx-auto flex flex-col gap-6 md:gap-8 text-white">
+                <h1 class="text-[clamp(3.2rem,9vw,8.5rem)] leading-[0.95] font-black tracking-tighter max-w-5xl hero-elem uppercase font-display">
+                    Menschen.<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-mfw-lavender to-mfw-magenta">Frieden.</span> Welt.
+                </h1>
+                
+                <p class="text-lg md:text-xl text-zinc-300 max-w-2xl leading-relaxed hero-elem font-normal">
+                    Eine Politik, die den Menschen in den Fokus rückt. Für eine starke Wirtschaft, sichere Energie und echten Frieden.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 mt-6 md:mt-10 hero-elem">
+                    <a href="#wahlprogramm" class="group relative inline-flex items-center gap-4 p-1.5 pr-8 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 hover:border-mfw-magenta/30 transition-all duration-500 ease-out backdrop-blur-md w-max">
+                        <span class="w-14 h-14 rounded-full bg-white text-mfw-bg flex items-center justify-center group-hover:scale-90 group-hover:bg-gradient-to-r group-hover:from-mfw-purple group-hover:to-mfw-magenta group-hover:text-white transition-all duration-500 shadow-lg">
+                            <i class="ph ph-arrow-down text-2xl group-hover:animate-bounce"></i>
+                        </span>
+                        <span class="font-display font-bold tracking-wide text-lg text-white group-hover:text-mfw-magenta transition-colors duration-500">
+                            Programm entdecken
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Countdown Section -->
+        <section class="py-16 md:py-24 relative overflow-hidden border-b border-mfw-border">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-mfw-purple/10 rounded-full blur-[100px] pointer-events-none"></div>
+            
+            <div class="w-full max-w-5xl mx-auto px-5 relative z-10 text-center flex flex-col items-center">
+                <h2 class="text-2xl md:text-4xl font-display font-bold tracking-tight mb-8 text-white reveal-elem">
+                    Countdown zur nächsten Landtagswahl
+                </h2>
+                
+                <div class="flex flex-wrap justify-center gap-3 md:gap-6 reveal-elem w-full">
+                    <div class="glass-panel rounded-2xl p-4 md:p-8 flex-1 sm:flex-none sm:min-w-[140px]">
+                        <div id="cd-days" class="text-4xl md:text-6xl font-display font-black mb-1 text-mfw-magenta">00</div>
+                        <div class="text-xs md:text-sm font-medium uppercase tracking-widest text-zinc-400">Tage</div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 md:p-8 flex-1 sm:flex-none sm:min-w-[140px]">
+                        <div id="cd-hours" class="text-4xl md:text-6xl font-display font-black mb-1 text-mfw-lavender">00</div>
+                        <div class="text-xs md:text-sm font-medium uppercase tracking-widest text-zinc-400">Stunden</div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 md:p-8 flex-1 sm:flex-none sm:min-w-[140px]">
+                        <div id="cd-mins" class="text-4xl md:text-6xl font-display font-black mb-1 text-white">00</div>
+                        <div class="text-xs md:text-sm font-medium uppercase tracking-widest text-zinc-400">Minuten</div>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 md:p-8 flex-1 sm:flex-none sm:min-w-[140px]">
+                        <div id="cd-secs" class="text-4xl md:text-6xl font-display font-black mb-1 text-white/50">00</div>
+                        <div class="text-xs md:text-sm font-medium uppercase tracking-widest text-zinc-400">Sekunden</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Kurzfassung Wahlprogramm -->
+        <section id="wahlprogramm" class="py-24 md:py-40 px-5 md:px-16 w-full max-w-7xl mx-auto relative">
+            <div class="mb-20 md:mb-32 text-center max-w-4xl mx-auto reveal-elem">
+                <h2 class="text-[clamp(2.5rem,6vw,5.5rem)] leading-none font-display font-black tracking-tighter mb-6 text-white">
+                    Unser Programm.<br>Klartext.
+                </h2>
+                <p class="text-lg md:text-2xl text-zinc-400 font-medium max-w-2xl mx-auto leading-relaxed">
+                    Die Positionen für eine sichere, freie und eigenständige Zukunft. Die 6 Grundpfeiler der Partei MFW.
+                </p>
+            </div>
+
+            <!-- Restored to large alternating rows as requested, with massive typography -->
+            <div class="flex flex-col gap-20 md:gap-32">
+                
+                <!-- I. Frieden & Außenpolitik -->
+                <div class="flex flex-col md:flex-row items-center gap-8 md:gap-16 reveal-elem">
+                    <div class="w-full md:w-1/2 rounded-3xl overflow-hidden glow-purple border border-mfw-border relative aspect-[4/3]">
+                        <!-- BILD AUSTAUSCHEN HIER -->
+                        <img src="https://picsum.photos/seed/diplomacy-flags/1000/800" alt="Frieden und Außenpolitik" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="text-mfw-magenta font-bold tracking-widest mb-2 text-sm uppercase">I. Außenpolitik</div>
+                        <h3 class="text-3xl md:text-5xl font-display font-bold mb-6 text-white leading-tight">Frieden, Diplomatie & Russland</h3>
+                        <p class="text-zinc-300 text-lg md:text-xl leading-relaxed font-normal">
+                            Wir fordern die pragmatische Erneuerung der diplomatischen und wirtschaftlichen Beziehungen zu Russland. Zudem wollen wir Russisch als Regelfach an weiterführenden Schulen etablieren, um interkulturellen Austausch und völkerverständigendes Wissen systematisch zu fördern.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- II. Soziale Gerechtigkeit -->
+                <div class="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-16 reveal-elem">
+                    <div class="w-full md:w-1/2 rounded-3xl overflow-hidden glow-magenta border border-mfw-border relative aspect-[4/3]">
+                        <!-- BILD AUSTAUSCHEN HIER -->
+                        <img src="https://picsum.photos/seed/elderly-hands/1000/800" alt="Soziale Gerechtigkeit" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="text-mfw-lavender font-bold tracking-widest mb-2 text-sm uppercase">II. Gerechtigkeit & Rente</div>
+                        <h3 class="text-3xl md:text-5xl font-display font-bold mb-6 text-white leading-tight">Garantierter Schutz vor Altersarmut</h3>
+                        <p class="text-zinc-300 text-lg md:text-xl leading-relaxed font-normal">
+                            Altersarmut ist kein Schicksal, sondern die Folge verfehlter Politik. Wir führen ein leistungsgerechtes Rentensystem ein, das sich am tatsächlichen Lebensarbeitsaufwand orientiert und einen Lebensabend in finanzieller Unabhängigkeit garantiert.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- III. Steuer- & Finanzreform -->
+                <div class="flex flex-col md:flex-row items-center gap-8 md:gap-16 reveal-elem">
+                    <div class="w-full md:w-1/2 rounded-3xl overflow-hidden glow-purple border border-mfw-border relative aspect-[4/3]">
+                        <!-- BILD AUSTAUSCHEN HIER -->
+                        <img src="https://picsum.photos/seed/scales-justice-money/1000/800" alt="Steuer und Finanzreform" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="text-mfw-purple font-bold tracking-widest mb-2 text-sm uppercase">III. Steuerreform</div>
+                        <h3 class="text-3xl md:text-5xl font-display font-bold mb-6 text-white leading-tight">Entlastung der arbeitenden Mitte</h3>
+                        <p class="text-zinc-300 text-lg md:text-xl leading-relaxed font-normal">
+                            Das derzeitige System belastet die arbeitende Mitte übermäßig. Wir schaffen eine gerechte Balance durch die massive steuerliche Entlastung kleiner und mittlerer Einkommen sowie eine gerechte Umverteilung durch gezielte Vermögensbesteuerung bei Spitzenverdienern.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- IV. Innere Sicherheit -->
+                <div class="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-16 reveal-elem">
+                    <div class="w-full md:w-1/2 rounded-3xl overflow-hidden glow-magenta border border-mfw-border relative aspect-[4/3]">
+                        <!-- BILD AUSTAUSCHEN HIER -->
+                        <img src="https://picsum.photos/seed/justice-gavel/1000/800" alt="Innere Sicherheit" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="text-mfw-magenta font-bold tracking-widest mb-2 text-sm uppercase">IV. Rechtsstaatlichkeit</div>
+                        <h3 class="text-3xl md:text-5xl font-display font-bold mb-6 text-white leading-tight">Null-Toleranz & Konsequenz</h3>
+                        <p class="text-zinc-300 text-lg md:text-xl leading-relaxed font-normal">
+                            Recht und Ordnung bilden das Fundament unserer Gesellschaft. Wir fordern Null-Toleranz bei Regeltreue, konsequente Sanktionen bei Straftaten und gesetzlich zwingende Höchststrafen bei allen Sexual- und Gewaltverbrechen.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- V. Energieversorgung -->
+                <div class="flex flex-col md:flex-row items-center gap-8 md:gap-16 reveal-elem">
+                    <div class="w-full md:w-1/2 rounded-3xl overflow-hidden glow-purple border border-mfw-border relative aspect-[4/3]">
+                        <!-- BILD AUSTAUSCHEN HIER -->
+                        <img src="https://picsum.photos/seed/nuclear-reactor/1000/800" alt="Energieversorgung" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="text-mfw-lavender font-bold tracking-widest mb-2 text-sm uppercase">V. Umwelt & Energie</div>
+                        <h3 class="text-3xl md:text-5xl font-display font-bold mb-6 text-white leading-tight">Klimaschutz & Kernkraft</h3>
+                        <p class="text-zinc-300 text-lg md:text-xl leading-relaxed font-normal">
+                            Für eine stabile, unabhängige und bezahlbare Energieversorgung setzen wir auf einen pragmatischen, wissenschaftsbasierten Klimaschutz ohne Ideologie und fordern die Rückkehr zur Nutzung moderner, CO2-freier Kernenergie in Deutschland.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- VI. Bildung & Familie -->
+                <div class="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-16 reveal-elem">
+                    <div class="w-full md:w-1/2 rounded-3xl overflow-hidden glow-magenta border border-mfw-border relative aspect-[4/3]">
+                        <!-- BILD AUSTAUSCHEN HIER -->
+                        <img src="https://picsum.photos/seed/child-nature/1000/800" alt="Bildung und Gesellschaft" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="text-mfw-purple font-bold tracking-widest mb-2 text-sm uppercase">VI. Bildung & Gesellschaft</div>
+                        <h3 class="text-3xl md:text-5xl font-display font-bold mb-6 text-white leading-tight">Gleichberechtigung & Neutralität</h3>
+                        <p class="text-zinc-300 text-lg md:text-xl leading-relaxed font-normal">
+                            Wir stehen für den konsequenten Schutz vor Diskriminierung und die rechtliche Anerkennung von LGBTQ+-Personen. Gleichzeitig fordern wir an Schulen und Kindertagesstätten absolute Erziehungsneutralität, damit Kinder sich unbeeinflusst entfalten können.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="mt-20 md:mt-32 flex justify-center reveal-elem">
+                <a href="#" class="group relative inline-flex items-center justify-center px-8 md:px-12 py-5 md:py-6 bg-transparent border-2 border-white/10 hover:border-mfw-lavender/40 text-white rounded-full font-display font-bold tracking-wide text-lg overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] w-full md:w-auto bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md hover:shadow-[0_0_30px_-5px_rgba(194,156,240,0.3)]">
+                    <span class="absolute inset-0 bg-mfw-lavender/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></span>
+                    <span class="relative z-10 flex items-center justify-center gap-3">
+                        Komplettes Wahlprogramm als PDF <i class="ph ph-download-simple text-2xl group-hover:-translate-y-1 transition-transform"></i>
+                    </span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Spenden -->
+        <section id="spenden" class="py-24 md:py-48 px-5 w-full max-w-6xl mx-auto text-center relative border-t border-mfw-border/50">
+            <div class="absolute inset-0 bg-mfw-purple/5 rounded-full -z-10 blur-[120px]"></div>
+            
+            <h2 class="text-[clamp(2.5rem,5vw,4.5rem)] leading-none font-display font-black tracking-tighter mb-6 text-white reveal-elem">
+                Unterstütze den Wandel.
+            </h2>
+            <p class="text-lg md:text-xl text-zinc-400 mb-16 max-w-2xl mx-auto font-normal reveal-elem">
+                Wir nehmen keine Großspenden von Konzernen, die unsere Richtung diktieren. Deine Spende hält uns unabhängig.
+            </p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8 reveal-elem w-full">
+                <button class="group relative overflow-hidden py-5 md:py-7 bg-transparent border border-mfw-border rounded-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] hover:border-mfw-lavender/50">
+                    <div class="absolute inset-0 bg-gradient-to-br from-mfw-lavender/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span class="relative z-10 text-2xl font-display font-black text-white group-hover:text-mfw-lavender transition-colors">10 €</span>
+                </button>
+                <button class="group relative overflow-hidden py-5 md:py-7 bg-transparent border border-mfw-border rounded-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] hover:border-mfw-magenta/50">
+                    <div class="absolute inset-0 bg-gradient-to-br from-mfw-magenta/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span class="relative z-10 text-2xl font-display font-black text-white group-hover:text-mfw-magenta transition-colors">25 €</span>
+                </button>
+                <button class="group relative overflow-hidden py-5 md:py-7 bg-transparent border border-mfw-border rounded-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] hover:border-mfw-purple/50">
+                    <div class="absolute inset-0 bg-gradient-to-br from-mfw-purple/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span class="relative z-10 text-2xl font-display font-black text-white group-hover:text-mfw-purple transition-colors">50 €</span>
+                </button>
+                <button class="group relative overflow-hidden py-5 md:py-7 bg-white rounded-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]">
+                    <div class="absolute inset-0 bg-gradient-to-r from-mfw-magenta to-mfw-purple opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span class="relative z-10 text-xl md:text-2xl font-display font-black text-mfw-bg group-hover:text-white transition-colors">Freier Betrag</span>
+                </button>
+            </div>
+            
+            <p class="text-sm text-zinc-500 mt-8 font-normal reveal-elem">Spenden sind steuerlich absetzbar. Sichere Zahlung über SSL-Verschlüsselung.</p>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#050208] text-white pt-20 pb-10 px-5 md:px-16 border-t border-mfw-border relative overflow-hidden">
+        <div class="absolute bottom-0 right-0 w-[500px] h-[500px] bg-mfw-purple/10 rounded-full blur-[120px] pointer-events-none translate-y-1/2 translate-x-1/2"></div>
+        <div class="max-w-7xl mx-auto w-full relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-20">
+                <!-- Brand Column -->
+                <div class="md:col-span-2 flex flex-col items-start">
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="assets/pics/logo.png" alt="MFW Logo" class="h-12 w-12 object-contain rounded-full" onerror="this.style.display='none'">
+                    </div>
+                    <p class="text-zinc-400 font-medium max-w-sm leading-relaxed mb-8">
+                        Menschen. Frieden. Welt.<br>
+                        Die Partei für eine sichere und eigenständige Zukunft in Deutschland und Europa.
+                    </p>
+                    <a href="mailto:kontakt@mfw-partei.de" class="text-mfw-lavender font-display font-bold text-lg hover:text-mfw-magenta transition-colors">kontakt@mfw-partei.de</a>
+                </div>
+                
+                <!-- Links Column 1 -->
+                <div class="flex flex-col gap-4">
+                    <h4 class="font-display font-bold text-white mb-2 uppercase tracking-widest text-sm">Navigation</h4>
+                    <a href="#fakten" class="text-zinc-400 hover:text-white transition-colors font-medium">Kernwerte</a>
+                    <a href="#wahlprogramm" class="text-zinc-400 hover:text-white transition-colors font-medium">Wahlprogramm</a>
+                    <a href="#spenden" class="text-zinc-400 hover:text-white transition-colors font-medium">Unterstützen</a>
+                </div>
+
+                <!-- Links Column 2 -->
+                <div class="flex flex-col gap-4">
+                    <h4 class="font-display font-bold text-white mb-2 uppercase tracking-widest text-sm">Rechtliches</h4>
+                    <button onclick="openModal('impressum-modal')" class="text-left text-zinc-400 hover:text-white transition-colors font-medium">Impressum</button>
+                    <button onclick="openModal('datenschutz-modal')" class="text-left text-zinc-400 hover:text-white transition-colors font-medium">Datenschutz</button>
+                </div>
+            </div>
+            
+            <div class="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs md:text-sm font-medium text-zinc-500">
+                <p>&copy; 2026 MFW Partei. Alle Rechte vorbehalten.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="hover:text-white transition-colors">Instagram</a>
+                    <a href="#" class="hover:text-white transition-colors">Twitter</a>
+                    <a href="#" class="hover:text-white transition-colors">Facebook</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cookie Consent Banner (Premium Pill) -->
+    <div id="cookie-banner" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 translate-y-[150%] z-[100] transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] w-[92%] md:w-auto">
+        <div class="bg-[#0a0510]/80 backdrop-blur-2xl border border-white/10 rounded-2xl md:rounded-full p-4 md:p-2 md:pl-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
+            <p class="text-xs md:text-sm text-zinc-300 font-medium tracking-wide text-center md:text-left">
+                Wir verwenden essenzielle Daten zur Bereitstellung der Website. <button onclick="openModal('datenschutz-modal')" class="text-white underline decoration-white/30 hover:decoration-white transition-all underline-offset-4">Datenschutz</button>
+            </p>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <button onclick="acceptCookies('essential')" class="flex-1 md:flex-none px-5 py-2.5 rounded-full text-xs font-bold tracking-wide text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Ablehnen</button>
+                <button onclick="acceptCookies('all')" class="flex-1 md:flex-none px-6 py-2.5 rounded-full text-xs font-bold tracking-wide bg-white text-black hover:scale-105 active:scale-95 transition-all">Akzeptieren</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for Impressum & Datenschutz -->
+    <!-- Impressum Modal -->
+    <div id="impressum-modal" class="fixed inset-0 z-[200] modal-overlay items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('impressum-modal')"></div>
+        <div class="relative w-full max-w-2xl bg-mfw-bg border border-mfw-border rounded-3xl p-8 max-h-[80vh] overflow-y-auto">
+            <button onclick="closeModal('impressum-modal')" class="absolute top-6 right-6 text-zinc-400 hover:text-white">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+            <h2 class="font-display font-bold text-3xl mb-6 text-white">Impressum</h2>
+            <div class="text-zinc-300 font-light space-y-4 text-sm leading-relaxed">
+                <p><strong>Angaben gemäß § 5 TMG</strong><br>
+                MFW - Menschen. Frieden. Welt.<br>
+                [Musterstraße 1]<br>
+                [12345 Musterstadt]</p>
+                <p><strong>Vertreten durch:</strong><br>
+                [Vorname Nachname des Vertreters]</p>
+                <p><strong>Kontakt:</strong><br>
+                Telefon: [01234 / 56789]<br>
+                E-Mail: [kontakt@mfw-partei.de]</p>
+                <p><strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:</strong><br>
+                [Vorname Nachname]<br>
+                [Musterstraße 1]<br>
+                [12345 Musterstadt]</p>
+                <p class="mt-8 text-xs text-zinc-500"><em>Dies ist ein rechtlicher Platzhalter. Vor Live-Gang müssen die korrekten Adressdaten der Partei eingetragen werden.</em></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datenschutz Modal -->
+    <div id="datenschutz-modal" class="fixed inset-0 z-[200] modal-overlay items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('datenschutz-modal')"></div>
+        <div class="relative w-full max-w-2xl bg-mfw-bg border border-mfw-border rounded-3xl p-8 max-h-[80vh] overflow-y-auto shadow-[0_0_80px_rgba(232,85,247,0.1)]">
+            <button onclick="closeModal('datenschutz-modal')" class="absolute top-6 right-6 text-zinc-400 hover:text-white">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+            <h2 class="font-display font-bold text-3xl mb-6 text-white">Datenschutzerklärung</h2>
+            <div class="text-zinc-300 font-light space-y-4 text-sm leading-relaxed">
+                <h3 class="font-bold text-white mt-4">1. Datenschutz auf einen Blick</h3>
+                <p>Wir nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.</p>
+                
+                <h3 class="font-bold text-white mt-4">2. Datenerfassung auf dieser Website</h3>
+                <p><strong>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</strong><br>
+                Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Impressum entnehmen.</p>
+                
+                <h3 class="font-bold text-white mt-4">3. Spenden und Zahlungsanbieter</h3>
+                <p>Wenn Sie über unsere Website spenden, werden Zahlungsinformationen über gesicherte SSL-Verbindungen (HTTPS) an unsere Zahlungsdienstleister übertragen. Ihre Daten werden ausschließlich zur Abwicklung der Spende verwendet.</p>
+
+                <h3 class="font-bold text-white mt-4">4. Cookies</h3>
+                <p>Unsere Internetseiten verwenden so genannte „Cookies“. Cookies sind kleine Textdateien und richten auf Ihrem Endgerät keinen Schaden an. Wir nutzen ausschließlich essenzielle Cookies für den Betrieb der Seite, sofern im Cookie-Banner nichts anderes ausgewählt wurde.</p>
+                
+                <p class="mt-8 text-xs text-zinc-500"><em>Dies ist ein struktureller Platzhalter. Lassen Sie die finalen Texte am besten rechtlich (z.B. über eRecht24) prüfen.</em></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password Protection Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const isUnlocked = localStorage.getItem('mfw_unlocked');
+            const pwScreen = document.getElementById('password-screen');
+            const pwForm = document.getElementById('password-form');
+            const pwInput = document.getElementById('password-input');
+            const pwError = document.getElementById('password-error');
+
+            if (isUnlocked === 'true') {
+                if (pwScreen) pwScreen.remove();
+                document.body.classList.remove('locked');
+            } else {
+                document.body.classList.add('locked');
+                window.scrollTo(0, 0);
+
+                if (pwForm) {
+                    pwForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        if (pwInput.value === '1234') {
+                            localStorage.setItem('mfw_unlocked', 'true');
+                            pwError.classList.add('opacity-0');
+                            
+                            gsap.to(pwScreen, {
+                                opacity: 0,
+                                duration: 0.8,
+                                ease: "power2.out",
+                                onComplete: () => {
+                                    document.body.classList.remove('locked');
+                                    pwScreen.remove();
+                                    
+                                    // Re-trigger hero animation for dramatic entry
+                                    gsap.fromTo(".hero-elem", 
+                                        { y: 40, scale: 0.95, opacity: 0 },
+                                        { y: 0, scale: 1, opacity: 1, duration: 1.8, stagger: 0.2, ease: "expo.out" }
+                                    );
+                                }
+                            });
+                        } else {
+                            pwError.classList.remove('opacity-0');
+                            pwInput.value = '';
+                            // Screen shake effect for wrong password
+                            gsap.fromTo(pwInput, 
+                                { x: -10 }, 
+                                { x: 10, duration: 0.08, yoyo: true, repeat: 5, ease: "linear", onComplete: () => gsap.set(pwInput, {x:0}) }
+                            );
+                        }
+                    });
+                }
+            }
+        });
+
+        // GSAP Animations
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+        // Smooth Scroll Navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                
+                if (targetId === '#') {
+                    gsap.to(window, { scrollTo: { y: 0 }, duration: 1.2, ease: "power3.inOut" });
+                    return;
+                }
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    gsap.to(window, {
+                        scrollTo: { y: targetElement, offsetY: 80 },
+                        duration: 1.2,
+                        ease: "power3.inOut"
+                    });
+                }
+            });
+        });
+
+        gsap.to(".hero-elem", {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            duration: 1.8,
+            stagger: 0.2,
+            ease: "expo.out",
+            delay: 0.1
+        });
+
+        ScrollTrigger.batch(".reveal-elem", {
+            onEnter: batch => gsap.to(batch, { 
+                opacity: 1, 
+                y: 0, 
+                duration: 1.4, 
+                stagger: 0.15, 
+                ease: "power3.out" 
+            }),
+            start: "top 85%",
+            once: true
+        });
+        
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('glass-panel', 'border-b', 'border-mfw-border', 'py-3', 'md:py-4');
+                nav.classList.remove('py-4', 'md:py-6', 'border-transparent');
+            } else {
+                nav.classList.remove('glass-panel', 'border-b', 'border-mfw-border', 'py-3', 'md:py-4');
+                nav.classList.add('py-4', 'md:py-6', 'border-transparent');
+            }
+        });
+
+        // Modal Logic
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.classList.add('modal-active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.classList.remove('modal-active');
+        }
+
+        // Cookie Consent Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('mfw_cookie_consent_v3')) {
+                setTimeout(() => {
+                    const banner = document.getElementById('cookie-banner');
+                    banner.classList.remove('translate-y-[150%]');
+                }, 1000);
+            }
+        });
+
+        function acceptCookies(type) {
+            const banner = document.getElementById('cookie-banner');
+            banner.classList.add('translate-y-[150%]');
+            localStorage.setItem('mfw_cookie_consent_v3', type);
+            console.log("Cookie preference saved:", type);
+        }
+
+        // Countdown Logic
+        const targetDate = new Date("May 9, 2027 18:00:00").getTime();
+        const updateCountdown = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            if (distance < 0) {
+                clearInterval(updateCountdown);
+                return;
+            }
+
+            document.getElementById("cd-days").innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+            document.getElementById("cd-hours").innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+            document.getElementById("cd-mins").innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+            document.getElementById("cd-secs").innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        }, 1000);
+    </script>
+</body>
+</html>
